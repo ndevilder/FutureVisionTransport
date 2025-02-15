@@ -1,0 +1,71 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Copy files to EC2
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ec2_user
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "*"
+          target: "/home/ubuntu/app_segmentation"
+
+      - name: Execute SSH commands on EC2
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ec2_user
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd /home/ubuntu/app_segmentation
+            sudo apt update
+            sudo apt install -y python3-pip python3-venv
+            python3 -m venv env
+            source env/bin/activate
+            pip install -r requirements.txt
+
+            # création automatique des services systemd
+            echo "Création des services systemd..."
+            echo "[Unit]
+            Description=Segmentation API
+            After=network.target
+
+            [Service]
+            User=ubuntu
+            WorkingDirectory=/home/ubuntu/app_segmentation
+            ExecStart=/home/ubuntu/app_segmentation/env/bin/python3 -m uvicorn app_segmentation_api:app --host 0.0.0.0 --port 8000
+            Restart=always
+
+            [Install]
+            WantedBy=multi-user.target" | sudo tee /etc/systemd/system/segmentation_api.service
+
+            echo "[Unit]
+            Description=Segmentation Front Streamlit
+            After=network.target
+
+            [Service]
+            User=ubuntu
+            WorkingDirectory=/home/ubuntu/app_segmentation
+            ExecStart=/home/ubuntu/app_segmentation/env/bin/streamlit run streamlit_segmentation_front.py --server.port 8501 --server.enableCORS false --server.enableXsrfProtection false --server.address 0.0.0.0
+            Restart=always
+
+            [Install]
+            WantedBy=multi-user.target" | sudo tee /etc/systemd/system/segmentation_front.service
+
+            sudo systemctl daemon-reload
+            sudo systemctl enable segmentation_api
+            sudo systemctl enable segmentation_front
+            sudo systemctl restart segmentation_api
+            sudo systemctl restart segmentation_front
