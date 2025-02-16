@@ -26,6 +26,8 @@ class CustomMeanIoU(MeanIoU):
 
 app = FastAPI()
 
+router = APIRouter()
+
 model_path = "app/model/mini_unet_hd_complete.keras"
 model = load_model(model_path, custom_objects={'CustomMeanIoU': CustomMeanIoU})
 
@@ -66,3 +68,4 @@ async def predict(file: UploadFile = File(...)):
 
 
 app.mount("/app/data", StaticFiles(directory="app/data"), name="data")
+app.include_router(router)
