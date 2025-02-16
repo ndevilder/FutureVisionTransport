@@ -74,12 +74,15 @@ async def predict(file: UploadFile = File(...)):
 
     # Convertir en image couleur
     color_mask = convert_mask_to_color(predicted_classes)
+    
+    # Redimensionner le masque coloré à la taille de l'image d'origine
+    color_mask_image = Image.fromarray(color_mask)
+    color_mask_image = color_mask_image.resize(original_size, Image.NEAREST)
 
-    # Sauvegarder l'image du masque
+    # Sauvegarder le masque final
     mask_filename = f"mask_{int(time.time())}.png"
     mask_path = os.path.join("app", "data", "predictions", mask_filename)
-    color_mask.save(mask_path)
-
+    color_mask_image.save(mask_path
 
     processing_time = f"{(time.time() - start_time):.2f} s"
 
