@@ -29,34 +29,42 @@ jobs:
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            
-            # Services systemd pour Amazon Linux (identique sauf chemin utilisateur)
+            cd /home/ec2-user/app_segmentation
+            # Installer les dépendances
+            if [ ! -d "env" ]; then
+              python3 -m venv env
+            fi
+            source env/bin/activate
+            pip install --upgrade pip
+            TMPDIR=/home/ec2-user/tmp pip install -r requirements.txt
+      
+            # Services systemd pour Amazon Linux
             echo "[Unit]
             Description=Segmentation API
             After=network.target
-
+      
             [Service]
             User=ec2-user
             WorkingDirectory=/home/ec2-user/app_segmentation
-            ExecStart=/home/ec2-user/app_segmentation/env/bin/python3 -m uvicorn app_segmentation_api:app --host 0.0.0.0 --port 8000
+            ExecStart=/home/ec2-user/app_segmentation/env/bin/python3 -m uvicorn main:app --host 0.0.0.0 --port 8000
             Restart=always
-
+      
             [Install]
             WantedBy=multi-user.target" | sudo tee /etc/systemd/system/segmentation_api.service
-
+      
             echo "[Unit]
             Description=Segmentation Front Streamlit
             After=network.target
-
+      
             [Service]
             User=ec2-user
             WorkingDirectory=/home/ec2-user/app_segmentation
-            ExecStart=/home/ec2-user/app_segmentation/env/bin/streamlit run streamlit_segmentation_front.py --server.port 8501 --server.enableCORS false --server.enableXsrfProtection false --server.address 0.0.0.0
+            ExecStart=/home/ec2-user/app_segmentation/env/bin/streamlit run front.py --server.port 8501 --server.enableCORS false --server.enableXsrfProtection false --server.address 0.0.0.0
             Restart=always
-
+      
             [Install]
             WantedBy=multi-user.target" | sudo tee /etc/systemd/system/segmentation_front.service
-
+      
             sudo systemctl daemon-reload
             sudo systemctl enable segmentation_api
             sudo systemctl enable segmentation_front

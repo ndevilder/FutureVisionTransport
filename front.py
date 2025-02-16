@@ -6,7 +6,7 @@ import io
 
 
 
-API_URL = os.getenv("API_URL", "http://localhost:8000/predict/")
+API_URL = os.getenv("API_URL", "http://13.61.19.31:8000/predict/")
 
 st.title("Segmentation d'Images - Démo U-Net")
 
@@ -33,7 +33,7 @@ if selected_image:
                 processing_time = result.get("processing_time")
 
                 if mask_path:
-                    mask_response = requests.get(f"http://localhost:8000/{mask_path}")
+                    mask_response = requests.get(f"http://13.61.19.31:8000/{mask_path}")
                     if mask_response.status_code == 200:
                         mask_image = Image.open(io.BytesIO(mask_response.content))
 
