@@ -7,12 +7,15 @@ import numpy as np
 import io
 import uvicorn
 import tensorflow as tf
-import time
 from keras.saving import register_keras_serializable
+import os
+import time
+from fastapi.staticfiles import StaticFiles
+
 
 @register_keras_serializable(package="MyMetrics")
 class CustomMeanIoU(MeanIoU):
-    def __init__(self, num_classes, name='mean_iou', dtype=None):
+    def __init__(self, num_classes, name=None, dtype=None):
         super().__init__(num_classes=num_classes, name=name, dtype=dtype)
 
     def update_state(self, y_true, y_pred, sample_weight=None):
@@ -20,58 +23,39 @@ class CustomMeanIoU(MeanIoU):
         y_true = tf.argmax(y_true, axis=-1)
         return super().update_state(y_true, y_pred, sample_weight)
 
-# Initialiser l'application FastAPI
-app = FastAPI()
-    
-# Charger le modèle
-model_path = "app/model/mini_unet_hd_complete.keras"
-model = load_model(model_path, custom_objects={'MyMetrics>CustomMeanIoU': CustomMeanIoU})
 
-# Définir la palette de couleurs
-PALETTE = np.array([
-    [0, 0, 0],        # void
-    [128, 64, 128],   # flat
-    [70, 70, 70],     # construction
-    [190, 153, 153],  # object
-    [107, 142, 35],   # nature
-    [70, 130, 180],   # sky
-    [220, 20, 60],    # human
-    [0, 0, 142]       # vehicle
-])
+app = FastAPI()
+
+model_path = "app/model/mini_unet_hd_complete.keras"
+model = load_model(model_path, custom_objects={'CustomMeanIoU': CustomMeanIoU})
+
 
 @app.post("/predict/")
 async def predict(file: UploadFile = File(...)):
     try:
-        start_time = time.time()  # DÉBUT TEMPS DE TRAITEMENT
-
+        start_time = time.time()
         contents = await file.read()
-        image = Image.open(io.BytesIO(contents)).convert('RGB')
-        image = image.resize((256, 256))
-        image_array = np.array(image) / 255.0
-        image_array = np.expand_dims(image_array, axis=0)
+        image_filename = file.filename
 
-        prediction = model.predict(image_array)
-        predicted_classes = np.argmax(prediction, axis=-1)[0]
+        mask_filename = image_filename.replace('_leftImg8bit.png', '_gtFine_labelIds.png')
+        mask_path = f"app/data/masks/{mask_filename}"
 
-        mask_colored = np.zeros((256, 256, 3), dtype=np.uint8)
-        for i in range(8):
-            mask_colored[predicted_classes == i] = PALETTE[i]
+        if not os.path.exists(mask_path):
+            return JSONResponse(status_code=404, content={"error": f"Masque non trouvé : {mask_path}"})
 
-        mask_path = 'static/predicted_mask.png'
-        Image.fromarray(mask_colored).save(mask_path)
+        mask = Image.open(mask_path)
+        mask = np.array(mask)
 
-        end_time = time.time()  # FIN TEMPS DE TRAITEMENT
-        processing_time = end_time - start_time
+        prediction = model.predict(np.expand_dims(mask, axis=(0, -1)))
 
-        return JSONResponse(content={
-            "message": "Prediction réussie",
-            "mask_path": "static/predicted_mask.png",
-            "processing_time": f"{processing_time:.2f} secondes"
-        })
+        predicted_mask_image = Image.fromarray(np.argmax(prediction[0], axis=-1).astype(np.uint8))
+        output_path = "app/data/predicted_mask.png"
+        predicted_mask_image.save(output_path)
+
+        return {"mask_path": output_path, "processing_time": f"{time.time() - start_time:.2f}s"}
 
     except Exception as e:
-        return JSONResponse(content={"error": str(e)}, status_code=500)
+        return JSONResponse(status_code=500, content={"error": str(e)})
 
 
-if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+app.mount("/app/data", StaticFiles(directory="app/data"), name="data")

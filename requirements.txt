@@ -6,4 +6,5 @@ streamlit
 pillow
 requests
 PIL
-Streamlit 
+Streamlit
+python-multipart
