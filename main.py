@@ -78,7 +78,7 @@ async def predict(file: UploadFile = File(...)):
 
     # Redimensionner le masque à la taille de l'image originale
     color_mask_image = color_mask
-    color_mask_image = color_mask_image.resize(original_size.size, Image.NEAREST)
+    color_mask_image = color_mask_image.resize(original_size, Image.NEAREST)
 
     # Sauvegarder le masque final
     os.makedirs("app/data/predictions", exist_ok=True)  # S'assure que le dossier existe
