@@ -22,7 +22,7 @@ class CustomMeanIoU(MeanIoU):
         return super().update_state(y_true, y_pred, sample_weight)
     
 # Charger le modèle
-model_path = os.getenv('MODEL_PATH', 'mini_unet_sa.keras')
+model_path = "app/model/mini_unet_hd_complete.keras"
 model = load_model(model_path, custom_objects={'CustomMeanIoU': CustomMeanIoU})
 
 # Définir la palette de couleurs
