@@ -78,8 +78,8 @@ async def predict(file: UploadFile = File(...)):
     # Sauvegarder l'image du masque
     mask_filename = f"mask_{int(time.time())}.png"
     mask_path = os.path.join("app", "data", "predictions", mask_filename)
-    mask_image = Image.fromarray(color_mask)
-    mask_image.save(mask_path)
+    color_mask.save(mask_path)
+
 
     processing_time = f"{(time.time() - start_time):.2f} s"
 
