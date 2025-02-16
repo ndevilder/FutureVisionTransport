@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, APIRouter, UploadFile, File
 from fastapi.responses import JSONResponse
 from keras.saving import load_model
 from keras.metrics import MeanIoU
