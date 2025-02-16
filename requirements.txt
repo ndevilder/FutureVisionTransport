@@ -6,3 +6,4 @@ streamlit
 pillow
 requests
 PIL
+Streamlit 

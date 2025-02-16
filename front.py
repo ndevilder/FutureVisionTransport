@@ -11,7 +11,7 @@ API_URL = os.getenv("API_URL", "http://13.61.19.31:8000/predict/")
 st.title("Segmentation d'Images - Démo U-Net")
 
 # Lister les images du dossier 'data'
-data_dir = "data"
+data_dir = "app/data"
 image_files = [f for f in os.listdir(data_dir) if f.endswith(('png', 'jpg', 'jpeg'))]
 
 selected_image = st.selectbox("Choisissez une image dans le dossier 'data'", image_files)
