@@ -4,7 +4,8 @@ from PIL import Image
 import os
 import io
 
-API_URL = os.getenv("API_URL", "API_URL = os.getenv("API_URL", "http://13.61.19.31/:8000/predict/")
+API_URL = os.getenv("API_URL", "http://13.61.19.31:8000/predict/")
+
 
 st.title("Segmentation d'Images - Démo U-Net")
 
