@@ -30,32 +30,39 @@ model_path = "app/model/mini_unet_hd_complete.keras"
 model = load_model(model_path, custom_objects={'CustomMeanIoU': CustomMeanIoU})
 
 
-@app.post("/predict/")
+@router.post("/predict/")
 async def predict(file: UploadFile = File(...)):
-    try:
-        start_time = time.time()
-        contents = await file.read()
-        image_filename = file.filename
+    start_time = time.time()
 
-        mask_filename = image_filename.replace('_leftImg8bit.png', '_gtFine_labelIds.png')
-        mask_path = f"app/data/masks/{mask_filename}"
+    # Charger l'image
+    image_bytes = await file.read()
+    image = Image.open(io.BytesIO(image_bytes)).convert('RGB')
 
-        if not os.path.exists(mask_path):
-            return JSONResponse(status_code=404, content={"error": f"Masque non trouvé : {mask_path}"})
+    # Redimensionner l'image à 256x256 pour le modèle
+    image_resized = image.resize((256, 256))
+    image_array = np.array(image_resized) / 255.0  # Normaliser
+    image_array = np.expand_dims(image_array, axis=0)  # Ajouter la dimension batch
 
-        mask = Image.open(mask_path)
-        mask = np.array(mask)
+    # Prédire le masque
+    prediction = model.predict(image_array)
+    predicted_classes = np.argmax(prediction, axis=-1)[0]
 
-        prediction = model.predict(np.expand_dims(mask, axis=(0, -1)))
+    # Convertir en image couleur
+    color_mask = convert_mask_to_color(predicted_classes)
 
-        predicted_mask_image = Image.fromarray(np.argmax(prediction[0], axis=-1).astype(np.uint8))
-        output_path = "app/data/predicted_mask.png"
-        predicted_mask_image.save(output_path)
+    # Sauvegarder l'image du masque
+    mask_filename = f"mask_{int(time.time())}.png"
+    mask_path = os.path.join("app", "data", "predictions", mask_filename)
+    mask_image = Image.fromarray(color_mask)
+    mask_image.save(mask_path)
 
-        return {"mask_path": output_path, "processing_time": f"{time.time() - start_time:.2f}s"}
+    processing_time = f"{(time.time() - start_time):.2f} s"
 
-    except Exception as e:
-        return JSONResponse(status_code=500, content={"error": str(e)})
+    # Retourner le chemin du masque et le temps de traitement
+    return JSONResponse(content={
+        "mask_path": f"app/data/predictions/{mask_filename}",
+        "processing_time": processing_time
+    })
 
 
 app.mount("/app/data", StaticFiles(directory="app/data"), name="data")

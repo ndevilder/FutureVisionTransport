@@ -26,9 +26,9 @@ if selected_image:
     mask_image = Image.open(mask_path) if os.path.exists(mask_path) else None
 
     col1, col2 = st.columns(2)
-    col1.image(image, caption=f"Image : {selected_image}", use_column_width=True)
+    col1.image(image, caption=f"Image : {selected_image}", use_container_width=True)
     if mask_image:
-        col2.image(mask_image, caption=f"Masque prétraité : {mask_filename}", use_column_width=True)
+        col2.image(mask_image, caption=f"Masque prétraité : {mask_filename}", use_container_width=True)
     else:
         col2.write("⚠️ Masque introuvable")
 
@@ -52,9 +52,9 @@ if selected_image:
                         # AFFICHER LES 3 IMAGES CÔTE À CÔTE
                         st.subheader("Résultats de la segmentation")
                         col1, col2, col3 = st.columns(3)
-                        col1.image(image, caption="Image Originale", use_column_width=True)
-                        col2.image(mask_image, caption="Masque Prétraité", use_column_width=True)
-                        col3.image(predicted_mask_image, caption="Masque Prédit", use_column_width=True)
+                        col1.image(image, caption="Image Originale", use_container_width=True)
+                        col2.image(mask_image, caption="Masque Prétraité", use_container_width=True)
+                        col3.image(predicted_mask_image, caption="Masque Prédit", use_container_width=True)
 
                         st.success(f"Prédiction réussie en {processing_time}")
                     else:
