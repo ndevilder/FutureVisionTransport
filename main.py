@@ -35,14 +35,14 @@ def convert_mask_to_color(mask):
     # Exemple de palette de couleurs pour 8 classes
     # Tu peux ajuster selon tes besoins
     palette = {
-        0: (0, 0, 0),       # Fond
-        1: (128, 0, 0),     # Classe 1
-        2: (0, 128, 0),     # Classe 2
-        3: (128, 128, 0),   # Classe 3
-        4: (0, 0, 128),     # Classe 4
-        5: (128, 0, 128),   # Classe 5
-        6: (0, 128, 128),   # Classe 6
-        7: (128, 128, 128)  # Classe 7
+        0: (128, 128, 128),  # 'void': gray
+        1: (0, 0, 255),      # 'flat': blue
+        2: (255, 165, 0),    # 'construction': orange
+        3: (0, 128, 0),      # 'object': green
+        4: (128, 0, 128),    # 'nature': purple
+        5: (0, 255, 255),    # 'sky': cyan
+        6: (255, 0, 255),    # 'human': magenta
+        7: (255, 0, 0),      # 'vehicle': red
     }
 
     # Créer une image RGB vide
@@ -88,6 +88,7 @@ async def predict(file: UploadFile = File(...)):
         "mask_path": f"app/data/predictions/{mask_filename}",
         "processing_time": processing_time
     })
+    
 
 
 app.mount("/app/data", StaticFiles(directory="app/data"), name="data")

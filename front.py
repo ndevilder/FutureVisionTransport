@@ -58,6 +58,31 @@ if selected_image:
                         col3.image(predicted_mask_image, caption="Masque Prédit", use_container_width=True)
 
                         st.success(f"Prédiction réussie en {processing_time}")
+                        
+                        category_colors = {
+                            'void': 'gray',
+                            'flat': 'blue',
+                            'construction': 'orange',
+                            'object': 'green',
+                            'nature': 'purple',
+                            'sky': 'cyan',
+                            'human': 'magenta',
+                            'vehicle': 'red'
+                        }
+
+                        st.markdown("### Légende des catégories :")
+
+                        # Générer les pastilles de couleur et leur libellé
+                        for category, color in category_colors.items():
+                            st.markdown(
+                                f"""
+                                <div style="display: flex; align-items: center; margin-bottom: 8px;">
+                                    <div style="width: 20px; height: 20px; background-color: {color}; border-radius: 50%; margin-right: 10px;"></div>
+                                    <span>{category}</span>
+                                </div>
+                                """,
+                                unsafe_allow_html=True
+                            )
                     else:
                         st.error(f"Erreur lors du chargement du masque prédit : {mask_response.status_code}")
                 else:
