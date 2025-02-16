@@ -63,35 +63,36 @@ async def predict(file: UploadFile = File(...)):
     image_bytes = await file.read()
     image = Image.open(io.BytesIO(image_bytes)).convert('RGB')
 
-    # Redimensionner l'image à 256x256 pour le modèle
+    # Redimensionner l'image pour le modèle
+    original_size = image.size
     image_resized = image.resize((256, 256))
     image_array = np.array(image_resized) / 255.0  # Normaliser
     image_array = np.expand_dims(image_array, axis=0)  # Ajouter la dimension batch
 
-    # Prédire le masque
+    # Prédiction
     prediction = model.predict(image_array)
     predicted_classes = np.argmax(prediction, axis=-1)[0]
 
     # Convertir en image couleur
     color_mask = convert_mask_to_color(predicted_classes)
-    
-    # Redimensionner le masque coloré à la taille de l'image d'origine
+
+    # Redimensionner le masque à la taille de l'image originale
     color_mask_image = Image.fromarray(color_mask)
     color_mask_image = color_mask_image.resize(original_size, Image.NEAREST)
 
     # Sauvegarder le masque final
+    os.makedirs("app/data/predictions", exist_ok=True)  # S'assure que le dossier existe
     mask_filename = f"mask_{int(time.time())}.png"
     mask_path = os.path.join("app", "data", "predictions", mask_filename)
-    color_mask_image.save(mask_path
+    color_mask_image.save(mask_path)
 
     processing_time = f"{(time.time() - start_time):.2f} s"
 
-    # Retourner le chemin du masque et le temps de traitement
     return JSONResponse(content={
         "mask_path": f"app/data/predictions/{mask_filename}",
         "processing_time": processing_time
     })
-    
+
 
 
 app.mount("/app/data", StaticFiles(directory="app/data"), name="data")
