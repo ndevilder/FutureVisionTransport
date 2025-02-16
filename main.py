@@ -31,6 +31,29 @@ router = APIRouter()
 model_path = "app/model/mini_unet_hd_complete.keras"
 model = load_model(model_path, custom_objects={'CustomMeanIoU': CustomMeanIoU})
 
+def convert_mask_to_color(mask):
+    # Exemple de palette de couleurs pour 8 classes
+    # Tu peux ajuster selon tes besoins
+    palette = {
+        0: (0, 0, 0),       # Fond
+        1: (128, 0, 0),     # Classe 1
+        2: (0, 128, 0),     # Classe 2
+        3: (128, 128, 0),   # Classe 3
+        4: (0, 0, 128),     # Classe 4
+        5: (128, 0, 128),   # Classe 5
+        6: (0, 128, 128),   # Classe 6
+        7: (128, 128, 128)  # Classe 7
+    }
+
+    # Créer une image RGB vide
+    color_mask = np.zeros((*mask.shape, 3), dtype=np.uint8)
+
+    # Remplir l'image avec les couleurs de la palette
+    for class_id, color in palette.items():
+        color_mask[mask == class_id] = color
+
+    return Image.fromarray(color_mask)
+
 
 @router.post("/predict/")
 async def predict(file: UploadFile = File(...)):
