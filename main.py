@@ -6,24 +6,26 @@ from PIL import Image
 import numpy as np
 import io
 import uvicorn
-import os
 import tensorflow as tf
 import time
-from fastapi.staticfiles import StaticFiles
+from keras.saving import register_keras_serializable
 
-
+@register_keras_serializable(package="MyMetrics")
 class CustomMeanIoU(MeanIoU):
-    def __init__(self, num_classes, name=None, dtype=None):
+    def __init__(self, num_classes, name='mean_iou', dtype=None):
         super().__init__(num_classes=num_classes, name=name, dtype=dtype)
 
     def update_state(self, y_true, y_pred, sample_weight=None):
         y_pred = tf.argmax(y_pred, axis=-1)
         y_true = tf.argmax(y_true, axis=-1)
         return super().update_state(y_true, y_pred, sample_weight)
+
+# Initialiser l'application FastAPI
+app = FastAPI()
     
 # Charger le modèle
 model_path = "app/model/mini_unet_hd_complete.keras"
-model = load_model(model_path, custom_objects={'CustomMeanIoU': CustomMeanIoU})
+model = load_model(model_path, custom_objects={'MyMetrics>CustomMeanIoU': CustomMeanIoU})
 
 # Définir la palette de couleurs
 PALETTE = np.array([
@@ -36,8 +38,6 @@ PALETTE = np.array([
     [220, 20, 60],    # human
     [0, 0, 142]       # vehicle
 ])
-
-app = FastAPI()
 
 @app.post("/predict/")
 async def predict(file: UploadFile = File(...)):
